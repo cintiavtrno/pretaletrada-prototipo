@@ -37,6 +37,7 @@
 
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:4.5rem}
+@media(max-width:600px){html{scroll-padding-top:9rem}}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:1.0625rem;line-height:1.6;overflow-x:hidden;font-feature-settings:"tnum" 0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--paper);z-index:60}
 [hidden]{display:none!important}
@@ -45,7 +46,7 @@ a{color:inherit}
 p,h1,h2,h3{margin:0}
 h2,h3{font-weight:600;line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
 :focus-visible{outline:3px solid currentColor;outline-offset:3px}
-.wrap{max-width:1240px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{padding-left:max(1.25rem,env(safe-area-inset-left,0px));padding-right:max(1.25rem,env(safe-area-inset-right,0px))}
 .peq{font-size:.86rem;color:var(--faint)}
 .preco{font-weight:700;font-variant-numeric:tabular-nums}
 
@@ -128,6 +129,14 @@ h2,h3{font-weight:600;line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
 .corpo{grid-column:1/-1;grid-row:2;display:none;background:var(--bg);color:var(--ink);padding-block:clamp(2.5rem,6vw,4.5rem)}
 .faixa.on .corpo{display:block}
 
+.vai{display:flex;align-items:center;gap:.6rem;margin-top:auto;padding-top:1.1rem;font-size:.95rem;font-weight:500}
+.vai svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:miter;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.cab-f:hover .vai svg,.cab-f:focus-visible .vai svg{transform:translateY(5px)}
+.cab-f.sel .vai svg{fill:currentColor}
+.vai .v2{display:none}
+.cab-f.sel .vai .v1{display:none}
+.cab-f.sel .vai .v2{display:inline}
+.meses .vai{justify-content:center;font-size:.78rem;padding-top:.4rem}
 /* faixas do catálogo */
 .palavra{font-size:clamp(1.6rem,3.1vw,2.9rem);font-weight:600;letter-spacing:-.03em;line-height:1;margin-bottom:.9rem}
 .lin{display:flex;justify-content:space-between;gap:.5rem;font-size:.86rem;opacity:.85;margin-top:.5rem}
@@ -178,11 +187,11 @@ h2,h3{font-weight:600;line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
 .info p{line-height:1.5}
 
 /* rodapé */
-.rodape{margin-top:clamp(4rem,10vw,8rem);overflow:hidden}
+.rodape{margin-top:clamp(4rem,10vw,8rem);padding-bottom:1.25rem}
 .rodape-t{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem 3rem;padding-bottom:clamp(1.5rem,4vw,3rem)}
 .rodape-t p{max-width:46ch}
-.corte{overflow:hidden;color:var(--terra)}
-.corte .marca{--h:calc(100cqw/5.1);height:calc(var(--h)*.62)}
+.corte{color:var(--terra)}
+.corte .marca{--h:calc(100cqw/5.1)}
 .corte .L{pointer-events:none}
 
 /* aviso */
@@ -194,7 +203,7 @@ h2,h3{font-weight:600;line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
   .inicio .marca{--h:calc(100cqw/2.95)}
   .inicio .quebra,.corte .quebra{display:block;flex-basis:100%;height:0}
   .inicio .quebra + .L,.corte .quebra + .L{margin-left:0}
-  .corte .marca{--h:calc(100cqw/2.95);height:calc(var(--h)*1.62)}
+  .corte .marca{--h:calc(100cqw/2.95)}
 }
 @media(max-width:899px){
   .faixas.cat{grid-template-columns:1fr}
@@ -519,6 +528,12 @@ async function comprar(item){
   aviso('Sem link de pagamento. Configure o checkout em CONFIG.');
 }
 
+/* leva o olhar para a faixa de leitura que acabou de abrir */
+function irPara(btn){
+  const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  requestAnimationFrame(()=>btn.scrollIntoView({behavior: reduz?'auto':'smooth', block:'start'}));
+}
+
 /* ---------- logotipo ---------- */
 function letraSvg(i){
   const l=LETRAS[i];
@@ -571,13 +586,14 @@ function renderCatalogo(){
         ${filaPequena(curso)}
         <span class="lin"><span>guia em pdf</span><span>${BRL.format(guia.preco)}</span></span>
         ${filaPequena(guia)}
+        <span class="vai" aria-hidden="true"><svg viewBox="0 0 20 20"><polygon points="2,5 18,5 10,17"/></svg><span class="v1">ver curso e guia</span><span class="v2">curso e guia abaixo</span></span>
       </button>
       <div class="corpo" id="corpo-${id}"></div>
     </div>`;
   }).join('');
   cat.querySelectorAll('.palavra').forEach(kin);
   cat.addEventListener('click',e=>{
-    const b=e.target.closest('.cab-f'); if(b){ escolherTema(b.closest('.faixa').dataset.tema); return; }
+    const b=e.target.closest('.cab-f'); if(b){ escolherTema(b.closest('.faixa').dataset.tema); irPara(b); return; }
     const m=e.target.closest('.mod'); if(m){ escolherModulo(m); return; }
     const c=e.target.closest('[data-comprar]'); if(c){ comprar(PRODUTOS.find(p=>p.id===c.dataset.comprar)); }
   });
@@ -624,11 +640,12 @@ function renderAssinatura(){
         <span class="fila">${`<span class="gw">${gl(m[2])}</span>`}</span>
         <span class="mn" aria-hidden="true">mês ${i+1}</span>
         <span class="nm" aria-hidden="true">${esc(m[0])}</span>
+        <span class="vai" aria-hidden="true"><svg viewBox="0 0 20 20"><polygon points="2,5 18,5 10,17"/></svg><span class="v1">ver mês</span><span class="v2">aberto</span></span>
       </button>
       <div class="corpo" id="corpo-m${i}"></div>
     </div>`;
   }).join('');
-  el.addEventListener('click',e=>{ const b=e.target.closest('.cab-f'); if(b) escolherMes(+b.closest('.faixa').dataset.i); });
+  el.addEventListener('click',e=>{ const b=e.target.closest('.cab-f'); if(b){ escolherMes(+b.closest('.faixa').dataset.i); irPara(b); } });
 }
 function escolherMes(i){
   document.querySelectorAll('#meses .faixa').forEach(f=>{
